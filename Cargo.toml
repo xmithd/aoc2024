@@ -1,0 +1,15 @@
+[package]
+name = "aoc2024"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "utils"
+path = "src/utils.rs"
+
+#[[bin]]
+#name = "aoc2024"
+#path = "src/main.rs"
+
+[dependencies]
+regex = "1.11.1"
