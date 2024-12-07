@@ -1,5 +1,5 @@
 use std::fs;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 
 pub fn read_file_as_text(path: &str) -> String {
     let text = fs::read_to_string(path).expect("Unable to read file");
@@ -367,4 +367,94 @@ pub fn middle_of_corrected_orders(printing_pages: &[Vec<i32>], rules: &HashMap<i
             return 0;
         }
     }).collect()
+}
+
+#[derive(Clone)]
+pub enum OP {
+    ADD,
+    MULTIPLY
+}
+
+struct OpsCombinatorial<'a> {
+    //total: i32, // n
+    ops: &'a[OP],
+    current: Vec<OP>, // has size m (empty spots)
+    current_n: u64, // from 0 to (# of ops)^m
+}
+
+// generate all combinations
+impl<'a> OpsCombinatorial<'a> {
+    fn new(operations: &'a[OP], spots: u64) -> OpsCombinatorial<'a> {
+        let mut current : Vec<OP> = Vec::new();
+        for _ in 0..spots {
+            current.push(operations.get(0).unwrap().clone());
+        }
+        Self {
+            //total,
+            ops: operations,
+            current,
+            current_n: 0,
+        }
+    }
+}
+
+impl Iterator for OpsCombinatorial<'_> {
+    type Item = Vec<OP>;
+    fn next(&mut self) -> Option<Self::Item> {
+        let n = self.current_n;
+        if n != 0 {
+            let len = self.current.len();
+            let max = self.ops.len().pow(len as u32);
+            if n > max as u64 {
+                return None;
+            }
+            // set all the OPS in the vector
+            let base = self.ops.len() as u64;
+            for i in 0..len {
+                // iterate x from tail until head
+                let x = len - 1 - i;
+                let curr_base = base.pow(i as u32);
+                let shifted = (n - (n % curr_base)) / curr_base;
+                self.current[x] = self.ops.get((shifted % base) as usize).unwrap().clone();
+            }
+        }
+        self.current_n += 1;
+        return Some(self.current.clone());
+    }
+}
+
+fn apply_operations(operations: &[OP], operands: &[u64]) -> u64 {
+    // put operations and operands in a queue
+    let mut ops_queue: VecDeque<OP>= VecDeque::from(Vec::from(operations));
+    let mut num_queue: VecDeque<u64> = VecDeque::from(Vec::from(operands));
+    loop {
+        if let Some(op) = ops_queue.pop_front() {
+            let lhs = num_queue.pop_front().unwrap();
+            let rhs = num_queue.pop_front().unwrap();
+            let computed = match op {
+                OP::ADD => lhs+rhs,
+                OP::MULTIPLY => lhs*rhs,
+            };
+            num_queue.push_front(computed);
+        } else {
+            break;
+        }
+
+    }
+    if num_queue.len() != 1 {
+        panic!("Oops, bug or mismatch in operators/operands")
+    }
+    return num_queue.pop_front().unwrap();
+}
+
+// returns the first valid match of operators
+pub fn find_ops(answer: u64, operands: &[u64]) -> Option<Vec<OP>> {
+    static OPS: [OP; 2] = [OP::ADD, OP::MULTIPLY];
+    let combos = OpsCombinatorial::new(&OPS, (operands.len()-1) as u64);
+    for combo in combos {
+        if answer == apply_operations(&combo, operands) {
+            return Some(combo);
+        }
+    }
+    return None;
 }
