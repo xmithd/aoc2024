@@ -372,7 +372,8 @@ pub fn middle_of_corrected_orders(printing_pages: &[Vec<i32>], rules: &HashMap<i
 #[derive(Clone)]
 pub enum OP {
     ADD,
-    MULTIPLY
+    MULTIPLY,
+    CONCAT
 }
 
 struct OpsCombinatorial<'a> {
@@ -423,6 +424,14 @@ impl Iterator for OpsCombinatorial<'_> {
     }
 }
 
+fn concat_u64(lhs: u64, rhs: u64) -> u64 {
+    let mut base = 10;
+    while rhs/base != 0 {
+        base *= 10;
+    }
+    return lhs*base + rhs;
+}
+
 fn apply_operations(operations: &[OP], operands: &[u64]) -> u64 {
     // put operations and operands in a queue
     let mut ops_queue: VecDeque<OP>= VecDeque::from(Vec::from(operations));
@@ -434,6 +443,7 @@ fn apply_operations(operations: &[OP], operands: &[u64]) -> u64 {
             let computed = match op {
                 OP::ADD => lhs+rhs,
                 OP::MULTIPLY => lhs*rhs,
+                OP::CONCAT => concat_u64(lhs, rhs)
             };
             num_queue.push_front(computed);
         } else {
@@ -448,9 +458,8 @@ fn apply_operations(operations: &[OP], operands: &[u64]) -> u64 {
 }
 
 // returns the first valid match of operators
-pub fn find_ops(answer: u64, operands: &[u64]) -> Option<Vec<OP>> {
-    static OPS: [OP; 2] = [OP::ADD, OP::MULTIPLY];
-    let combos = OpsCombinatorial::new(&OPS, (operands.len()-1) as u64);
+pub fn find_ops(answer: u64, operands: &[u64], operators: &[OP]) -> Option<Vec<OP>> {
+    let combos = OpsCombinatorial::new(&operators, (operands.len()-1) as u64);
     for combo in combos {
         if answer == apply_operations(&combo, operands) {
             return Some(combo);

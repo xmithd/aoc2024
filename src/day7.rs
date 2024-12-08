@@ -1,4 +1,4 @@
-use utils;
+use utils::{self, OP};
 
 fn parse_input(txt: &str) -> Vec<(u64, Vec<u64>)> {
     txt.split("\n")
@@ -23,11 +23,20 @@ pub fn day7() {
     let text = utils::read_file_as_text("inputs/day7.txt");
     let parsed: Vec<(u64, Vec<u64>)> = parse_input(&text);
     //println!("parsed: {:?}", parsed);
+    let ops_p1: [OP; 2] = [OP::ADD, OP::MULTIPLY];
     let sum_correct = parsed.iter().map(|(answ, operands)| {
-        (answ, utils::find_ops(*answ, operands))
+        (answ, utils::find_ops(*answ, operands, &ops_p1))
     }).filter( | (_, res)| { res.is_some() } )
     .map(|(answ, _)| {
         answ
     }).sum::<u64>();
     println!("Answer for day 7 part 1: {}", sum_correct);
+    let ops_p2: [OP; 3] = [OP::ADD, OP::MULTIPLY, OP::CONCAT];
+    let sum_correct_2 = parsed.iter().map(|(answ, operands)| {
+        (answ, utils::find_ops(*answ, operands, &ops_p2))
+    }).filter( | (_, res)| { res.is_some() } )
+    .map(|(answ, _)| {
+        answ
+    }).sum::<u64>();
+    println!("Answer for day 7 part 2: {}", sum_correct_2);
 }
