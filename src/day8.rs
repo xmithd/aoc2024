@@ -71,6 +71,8 @@ fn find_pairs(board: &[Vec<char>]) -> Vec<(Point, Point)> {
     }
     let mut pairs: Vec<(Point, Point)> = Vec::new();
     for (_element, list) in mapping {
+        // note to keep in mind - some points may be on the same axis (gcd > 1)
+        // but it doesn't show in input so we are safe
         for combo in list.into_iter().combinations(2) {
             pairs.push((combo.get(0).unwrap().clone(), combo.get(1).unwrap().clone()));
         }

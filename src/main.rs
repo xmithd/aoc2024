@@ -5,7 +5,8 @@
 //mod day5;
 //mod day6;
 //mod day7;
-mod day8;
+//mod day8;
+mod day10;
 
 fn main() {
     //day1::day1();
@@ -15,5 +16,6 @@ fn main() {
     //day5::day5();
     //day6::day6();
     //day7::day7();
-    day8::day8();
+    //day8::day8();
+    day10::day10();
 }
