@@ -56,13 +56,15 @@ fn blink_transform(list: &[u64]) -> Vec<u64> {
     .collect()
 }
 
-fn blink_r_helper(num: u64, round: usize, target_round: usize) -> usize {
+// unused recursive solution without cache
+// try to memoize this one
+fn _blink_r_helper(num: u64, round: usize, target_round: usize) -> usize {
     if round >= target_round {
         return 1;
     }
     return match apply_rule(num) {
-        Either::NUM(c) => blink_r_helper(c, round+1, target_round),
-        Either::SPLIT(l,r ) => blink_r_helper(l, round+1, target_round) + blink_r_helper(r, round+1, target_round)
+        Either::NUM(c) => _blink_r_helper(c, round+1, target_round),
+        Either::SPLIT(l,r ) => _blink_r_helper(l, round+1, target_round) + _blink_r_helper(r, round+1, target_round)
     }
 }
 
@@ -70,13 +72,13 @@ fn blink_r_helper_with_cache(num: u64, round: usize, target_round: usize, cache:
     if let Some(&res) = cache.get(&(num, round)) {
         return res;
     } else {
-        if (round >= target_round) {
+        if round >= target_round {
             cache.insert((num, round), 1);
             return 1;
         } else {
             let res = match apply_rule(num) {
                 Either::NUM(c) => blink_r_helper_with_cache(c, round+1, target_round, cache),
-                Either::SPLIT(l,r ) => blink_r_helper_with_cache(l, round+1, target_round, cache) + blink_r_helper_with_cache(r, round+1, target_round, cache)
+                Either::SPLIT(l,r) => blink_r_helper_with_cache(l, round+1, target_round, cache) + blink_r_helper_with_cache(r, round+1, target_round, cache)
             };
             cache.insert((num, round), res);
             return res;
@@ -111,7 +113,7 @@ pub fn day11() {
     let soln = solve_p1(&pb, 25);
     println!("Solution to day 11 part 1: {}", soln); // 189167
     let soln2 = solve_p2(&pb, 75);
-    println!("Solution to day 11 part 2: {}", soln2);
+    println!("Solution to day 11 part 2: {}", soln2); // 225253278506288
 }
 
 #[cfg(test)]
