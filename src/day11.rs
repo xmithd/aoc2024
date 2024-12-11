@@ -1,4 +1,5 @@
 use utils;
+use std::collections::HashMap;
 
 
 fn parse_input(txt: &str) -> Vec<u64> {
@@ -55,8 +56,38 @@ fn blink_transform(list: &[u64]) -> Vec<u64> {
     .collect()
 }
 
+fn blink_r_helper(num: u64, round: usize, target_round: usize) -> usize {
+    if round >= target_round {
+        return 1;
+    }
+    return match apply_rule(num) {
+        Either::NUM(c) => blink_r_helper(c, round+1, target_round),
+        Either::SPLIT(l,r ) => blink_r_helper(l, round+1, target_round) + blink_r_helper(r, round+1, target_round)
+    }
+}
 
-fn solve(pb: &[u64], blink_times: u32) -> usize {
+fn blink_r_helper_with_cache(num: u64, round: usize, target_round: usize, cache: &mut HashMap<(u64, usize), usize>) -> usize {
+    if let Some(&res) = cache.get(&(num, round)) {
+        return res;
+    } else {
+        if (round >= target_round) {
+            cache.insert((num, round), 1);
+            return 1;
+        } else {
+            let res = match apply_rule(num) {
+                Either::NUM(c) => blink_r_helper_with_cache(c, round+1, target_round, cache),
+                Either::SPLIT(l,r ) => blink_r_helper_with_cache(l, round+1, target_round, cache) + blink_r_helper_with_cache(r, round+1, target_round, cache)
+            };
+            cache.insert((num, round), res);
+            return res;
+        }
+    }
+}
+
+
+
+
+fn solve_p1(pb: &[u64], blink_times: u32) -> usize {
     let mut input = Vec::from(pb);
     for _ in 0..blink_times {
         input = blink_transform(&input)
@@ -64,18 +95,28 @@ fn solve(pb: &[u64], blink_times: u32) -> usize {
     return input.len()
 }
 
+fn solve_p2(pb: &[u64], blink_times: u32) -> usize {
+    let mut sum: usize = 0;
+    let mut cache: HashMap<(u64, usize), usize> = HashMap::new();
+    for a in pb {
+        //sum += blink_r_helper(*a, 0, blink_times as usize);
+        sum += blink_r_helper_with_cache(*a, 0, blink_times as usize, &mut cache);
+    }
+    return sum;
+}
+
 pub fn day11() {
     let text = utils::read_file_as_text("inputs/day11.txt");
     let pb = parse_input(&text);
-    let soln = solve(&pb, 25);
+    let soln = solve_p1(&pb, 25);
     println!("Solution to day 11 part 1: {}", soln); // 189167
-    //let soln2 = solve(&pb, 75);
-    //println!("Solution to day 11 part 2: {}", soln2);
+    let soln2 = solve_p2(&pb, 75);
+    println!("Solution to day 11 part 2: {}", soln2);
 }
 
 #[cfg(test)]
 mod test {
-    use super::{blink_transform, count_digits, parse_input, solve, split_number};
+    use super::{blink_transform, count_digits, parse_input, solve_p1, solve_p2, split_number};
 
     #[test]
     fn test_digits_count() {
@@ -106,7 +147,7 @@ mod test {
     fn test_example() {
         let text = r"125 17";
         let pb = parse_input(&text);
-        assert_eq!(solve(&pb, 25), 55312);
-        //assert_eq!(solve_pt2(&pb), 81);
+        assert_eq!(solve_p1(&pb, 25), 55312);
+        assert_eq!(solve_p2(&pb, 25), 55312);
     }
 }
