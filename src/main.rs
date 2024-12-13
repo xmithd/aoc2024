@@ -10,8 +10,8 @@ use std::time::Instant;
 //mod day9;
 //mod day10;
 //mod day11;
-mod day12;
-
+//mod day12;
+mod day13;
 
 fn main() {
     let start = Instant::now();
@@ -26,6 +26,7 @@ fn main() {
     //day9::day9();
     //day10::day10();
     //day11::day11();
-    day12::day12();
+    //day12::day12();
+    day13::day13();
     println!("Time taken: {:?}", start.elapsed());
 }
