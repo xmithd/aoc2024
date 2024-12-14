@@ -214,9 +214,9 @@ pub fn day13() {
     let text = utils::read_file_as_text("inputs/day13.txt");
     let pb = parse_input(&text);
     let sol1 = solve_pt1(&pb);
-    println!("Solution to part 1: {}", sol1);
+    println!("Solution to day 13 part 1: {}", sol1);
     let sol2 = solve_pt2(&pb);
-    println!("Solution to part 2: {}", sol2);
+    println!("Solution to day 13 part 2: {}", sol2);
 }
 
 #[cfg(test)]

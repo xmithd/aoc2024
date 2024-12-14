@@ -138,6 +138,7 @@ fn do_dfs(current: (i32, i32), board: &[Vec<i32>], visited: &mut HashSet<(i32, i
     }
 }
 
+// use dfs to find longest line of robots one could draw
 fn  find_longest_line(board: &[Vec<i32>], positions: &Problem) -> u32 {
     let mut visited: HashSet<(i32, i32)> = HashSet::new();
     let mut max_l = 0;
@@ -156,13 +157,14 @@ fn  find_longest_line(board: &[Vec<i32>], positions: &Problem) -> u32 {
 
 fn solve_pt2(pb: &Problem) {
    let mut dt = 0;
-   const THRESHOLD: u32 = 50;
+   const THRESHOLD: u32 = 50; // picked arbitrarily
    loop {
         dt = dt+1;
         let (board, updated_pb) = simulate_with_time(pb, dt);
         let b = find_longest_line(&board, &updated_pb);
         if b > THRESHOLD {
             print_board(&board);    
+            println!("Line length: {}", b);
             break;
         }
    } 
