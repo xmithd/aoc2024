@@ -104,7 +104,7 @@ impl Puzzle {
     pub fn compute_pt2(&self) -> i32 {
         let mut paths: HashSet<(i32,i32)> = HashSet::new();
         let solns = self.a_star_all_paths();
-        println!("{:?}", solns);
+        //println!("{:?}", solns);
         for soln in solns {
             for node in soln {
                 let pos = (node.0, node.1);
@@ -117,7 +117,7 @@ impl Puzzle {
 
     pub fn heuristic(&self, state: (i32, i32)) -> i32 {
         // Manhattan distance
-        (state.0 - self.end.0).abs() + (state.1 - self.end.1).abs()
+        0*((state.0 - self.end.0).abs() + (state.1 - self.end.1).abs())
     }
 
     pub fn cost(&self, state: (i32, i32)) -> i32 {
@@ -183,7 +183,7 @@ impl Puzzle {
     pub fn a_star_all_paths(&self) -> Vec<Vec<(i32, i32, char)>> { // instead of Option<(i32,Vec<(i32, i32, char))>
         let mut ret: Vec<Vec<(i32, i32, char)>> = Vec::new();
         let mut best_score: i32 = -1;
-        //let mut visited: HashSet<(i32, i32, char)> = HashSet::new();
+        let mut visited: HashSet<(i32, i32, char)> = HashSet::new();
         let mut frontier = BinaryHeap::new();
         let start_position = (self.start.0, self.start.1, 'E');
         frontier.push(State { cost: self.heuristic(self.start), positions: vec![start_position] });
@@ -205,18 +205,21 @@ impl Puzzle {
             //if visited.contains(current) {
             //    continue;
             //} else {
-            //    visited.insert(current.clone());
+                visited.insert(current.clone());
             //}
             for child in self.possible_next_positions_v2(current_pos, current.2) {
-                for (x, y, _) in &positions {
-                    if child == (*x, *y) {
-                        continue;
-                    }
-                }
+                //for (x, y, _) in &positions {
+                //    if child == (*x, *y) {
+                //        continue;
+                //    }
+                //}
                 let orientation = self.get_orientation(current, child);
                 let added_cost = self.get_orientation_cost(current.2, orientation);
                 let new_cost = cost + self.cost(child) - self.heuristic(current_pos) + self.heuristic(child) + added_cost;
                 let child_node = (child.0, child.1, orientation);
+                if visited.contains(&child_node) {
+                    continue;
+                }
                 frontier.push(State { cost: new_cost, positions: [positions.clone(), [child_node].to_vec()].concat() });
             }
         }
