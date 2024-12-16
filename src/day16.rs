@@ -116,8 +116,14 @@ impl Puzzle {
     }
 
     pub fn heuristic(&self, state: (i32, i32)) -> i32 {
-        // Manhattan distance
-        0*((state.0 - self.end.0).abs() + (state.1 - self.end.1).abs())
+        // Note to self: other A* is supposed to be optimal as long as h function is less than or
+        // equal to cost... but I am not having luck with chosing an h val...
+        // No luck with Manhattan distance
+        //(state.0 - self.end.0).abs() + (state.1 - self.end.1).abs()
+        // No luck with Euclidean distance either
+        //((state.0-self.end.0).pow(2) as f64 + (state.1 - self.end.1).pow(2) as f64).sqrt() as i32
+        0
+
     }
 
     pub fn cost(&self, state: (i32, i32)) -> i32 {
@@ -235,13 +241,15 @@ impl Puzzle {
             let current = &node;
             let current_pos = (current.0, current.1);
             if  current_pos == self.end { return Some(cost)}
-            if visited.contains(&current_pos) {
-                continue;
-            } else {
+            //if visited.contains(&current_pos) {
+            //    continue;
+            //} else {
                 visited.insert(current_pos);
-            }
+            //}
             for child in self.possible_next_positions(current_pos) {
-                // TODO add for rotation
+                if visited.contains(&child) {
+                    continue;
+                }
                 let orientation = self.get_orientation(current, child);
                 let added_cost = self.get_orientation_cost(current.2, orientation);
                 let new_cost = cost + self.cost(child) - self.heuristic(current_pos) + self.heuristic(child) + added_cost;
