@@ -375,7 +375,7 @@ v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^
       assert_eq!(solve_pt1(&mut pb), 10092);
     }
 
-    //#[test]
+    #[test]
     fn test_part2_small() {
         let part2_sample = r"
 #######
