@@ -67,7 +67,8 @@ struct Puzzle {
     rows: usize,
     start: (i32 ,i32),
     end: (i32 ,i32),
-    corrupted: Vec<(i32, i32)>
+    corrupted: Vec<(i32, i32)>,
+    bytes_fallen: usize,
 }
 
 impl Debug for Puzzle {
@@ -139,7 +140,7 @@ impl Puzzle {
         //if let Some(thebest) = solns.get(ith) {
         //    self.draw_final_board(&thebest);
         //}
-        println!("Found {} best paths!", solns.len());
+        //println!("Found {} best paths!", solns.len());
         minone - 1
     }
 
@@ -148,7 +149,7 @@ impl Puzzle {
         // equal to cost... but I am not having luck with chosing an h val...
         //0
         // No luck with Manhattan distance
-        ((state.0 - self.end.0).abs() + (state.1 - self.end.1).abs())*1//-1
+        ((state.0 - self.end.0).abs() + (state.1 - self.end.1).abs())*1
         // No luck with Euclidean distance either
         //((state.0-self.end.0).pow(2) as f64 + (state.1 - self.end.1).pow(2) as f64).sqrt() as i32
 
@@ -170,47 +171,6 @@ impl Puzzle {
             .filter(|(j, i)| *i >= 0 && *i < self.rows as i32 && *j >= 0 && *j < self.columns as i32)
             .filter(|(j, i)| self.get(*j, *i) != '#')
             .collect()
-    }
-
-    fn possible_next_positions_v2(&self, current: (i32, i32), orientation: char) -> Vec<(i32, i32)> {
-        let forbidden_dir = match orientation {
-            'N' => (0, 1),
-            'S' => (0, -1),
-            'E' => (-1, 0),
-            'W' => (1, 0),
-            _ => panic!("Unknown direction!")
-        };
-        // 4 directions (E, W, N, S)
-        [(1,0), (-1, 0), (0, -1), (0, 1)].into_iter()
-            .filter(|it| { *it != forbidden_dir })
-            .map( |(dx, dy)| (current.0 + dx, current.1 + dy))
-            .filter(|(j, i)| *i >= 0 && *i < self.rows as i32 && *j >= 0 && *j < self.columns as i32)
-            .filter(|(j, i)| self.get(*j, *i) != '#')
-            .collect()
-    }
-
-    fn get_orientation(&self, current: &(i32, i32, char), child: (i32, i32)) -> char {
-        let dir = (child.0 - current.0, child.1 - current.1);
-        match dir {
-            (0, -1) => 'N',
-            (1, 0) => 'E',
-            (-1, 0) => 'W',
-            (0, 1) => 'S',
-            _ => panic!("Unknown direction or calulation error!")
-        }
-    }
-
-    fn get_orientation_cost(&self, current: char, next: char) -> i32 {
-        if current == next {
-            0
-        } else if current == 'N' && next == 'S'
-        || current == 'S' && next == 'N'
-        || current == 'E' && next == 'W'
-        || current == 'W' && next == 'E' {
-            2*1000
-        } else {
-            1000
-        }
     }
 
     // returns the list of best paths
@@ -324,28 +284,37 @@ fn parse_puzzle(str: &str, rows: usize, columns: usize, first_corrupted_bytes: O
         rows,
         start,
         end,
-        corrupted
+        corrupted,
+        bytes_fallen: until
     }
 }
 
 fn solve_pt1(puzzle: &Puzzle) -> i32 {
-    //println!("{:?}", puzzle);
     puzzle.compute_score()
-    //puzzle.compute_path()
 }
 
-fn solve_pt2(puzzle: &Puzzle) -> i32 {
-    puzzle.compute_path()
+fn solve_pt2(puzzle: &mut Puzzle) -> Option<(i32,i32)> {
+    // brute force
+    for i in puzzle.bytes_fallen..puzzle.corrupted.len() {
+        let next_corrupted = puzzle.corrupted.get(i).unwrap();
+        puzzle.board[next_corrupted.1 as usize][next_corrupted.0 as usize] = '#';
+        let c = puzzle.compute_score();
+        if c == 0 {
+            // found it
+            return Some(*next_corrupted);
+        }
+    }
+    None
 }
 
 pub fn day18() {
     let text = fs::read_to_string("inputs/day18.txt").unwrap();
-    let puzzle = parse_puzzle(&text, 71, 71, Some(1024));
+    let mut puzzle = parse_puzzle(&text, 71, 71, Some(1024));
     //println!("{:?}", puzzle);
     let soln = solve_pt1(&puzzle);
     println!("Solution to day 16 part 1: {}", soln); // 308
-    //let soln2 = solve_pt2(&puzzle);
-    //println!("Solution to day 16 part 2: {}", soln2);
+    let soln2 = solve_pt2(&mut puzzle);
+    println!("Solution to day 16 part 2: {:?}", soln2);
 }
 
 #[cfg(test)]
@@ -381,10 +350,10 @@ mod tests {
 ";
     #[test]
     fn test_first_sample() {
-        let pb = parse_puzzle(&FIRST_SAMPLE, 7, 7, Some(12));
+        let mut pb = parse_puzzle(&FIRST_SAMPLE, 7, 7, Some(12));
         println!("{:?}", pb);
         assert_eq!(solve_pt1(&pb), 22);
-        //assert_eq!(solve_pt2(&pb), 45);
+        assert_eq!(solve_pt2(&mut pb), Some((6, 1)));
     }
 
 }
