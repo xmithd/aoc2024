@@ -146,13 +146,9 @@ impl Puzzle {
 
     pub fn heuristic(&self, state: (i32, i32)) -> i32 {
         // Note to self: other A* is supposed to be optimal as long as h function is less than or
-        // equal to cost... but I am not having luck with chosing an h val...
-        //0
-        // No luck with Manhattan distance
-        ((state.0 - self.end.0).abs() + (state.1 - self.end.1).abs())*1
-        // No luck with Euclidean distance either
-        //((state.0-self.end.0).pow(2) as f64 + (state.1 - self.end.1).pow(2) as f64).sqrt() as i32
-
+        // equal to cost... DO NOT USE for finding all best paths!
+        // Manhattan distance
+        ((state.0 - self.end.0).abs() + (state.1 - self.end.1).abs())
     }
 
     pub fn cost(&self, state: (i32, i32)) -> i32 {

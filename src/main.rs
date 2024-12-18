@@ -34,6 +34,7 @@ fn main() {
     //day12::day12();
     //day14::day14();
     //day15::day15();
+    //day16::day16();
     //day17::day17();
     day18::day18();
     println!("Time taken: {:?}", start.elapsed());

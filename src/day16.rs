@@ -21,7 +21,7 @@ impl Ord for State {
         // In case of a tie we compare positions - this step is necessary
         // to make implementations of `PartialEq` and `Ord` consistent.
         other.cost.cmp(&self.cost)
-            .then_with(|| other.positions.cmp(&self.positions))
+            //.then_with(|| other.positions.cmp(&self.positions))
     }
 }
 
@@ -48,7 +48,7 @@ impl Ord for StateCheap {
         // In case of a tie we compare positions - this step is necessary
         // to make implementations of `PartialEq` and `Ord` consistent.
         other.cost.cmp(&self.cost)
-            .then_with(|| other.node.cmp(&self.node))
+            //.then_with(|| other.node.cmp(&self.node))
     }
 }
 
@@ -96,7 +96,7 @@ impl Puzzle {
        //if let Some((cost, path)) = self.a_star() {
        //     println!("{:?}", path);
        if let Some(cost) = self.a_star_cheap() {
-            return cost;
+            return cost - self.heuristic(self.end);
         }
         0
     }
@@ -117,13 +117,11 @@ impl Puzzle {
 
     pub fn heuristic(&self, state: (i32, i32)) -> i32 {
         // Note to self: other A* is supposed to be optimal as long as h function is less than or
-        // equal to cost... but I am not having luck with chosing an h val...
-        // No luck with Manhattan distance
-        //(state.0 - self.end.0).abs() + (state.1 - self.end.1).abs()
-        // No luck with Euclidean distance either
-        //((state.0-self.end.0).pow(2) as f64 + (state.1 - self.end.1).pow(2) as f64).sqrt() as i32
-        0
-
+        // equal to cost...
+        // Manhattan distance OK for part 1 but don't use for part 2.
+        ((state.0 - self.end.0).abs() + (state.1 - self.end.1).abs())*0
+        // For finding all best paths, A* does not guarantee finding all paths so return 0 and use
+        // Dijkstra's or BFS
     }
 
     pub fn cost(&self, state: (i32, i32)) -> i32 {
@@ -220,12 +218,12 @@ impl Puzzle {
                 //    }
                 //}
                 let orientation = self.get_orientation(current, child);
-                let added_cost = self.get_orientation_cost(current.2, orientation);
-                let new_cost = cost + self.cost(child) - self.heuristic(current_pos) + self.heuristic(child) + added_cost;
                 let child_node = (child.0, child.1, orientation);
                 if visited.contains(&child_node) {
                     continue;
                 }
+                let added_cost = self.get_orientation_cost(current.2, orientation);
+                let new_cost = cost + self.cost(child) - self.heuristic(current_pos) + self.heuristic(child) + added_cost;
                 frontier.push(State { cost: new_cost, positions: [positions.clone(), [child_node].to_vec()].concat() });
             }
         }
