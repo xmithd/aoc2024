@@ -117,7 +117,7 @@ impl Puzzle {
         }
     }
 
-    pub fn compute_path(&self) -> i32 {
+    pub fn _compute_path(&self) -> i32 {
         //let mut paths: HashSet<(i32,i32)> = HashSet::new();
         let solns = self.a_star_all_paths();
         //println!("{:?}", solns);
@@ -134,7 +134,7 @@ impl Puzzle {
         for (i, soln) in solns.iter().enumerate() {
             if (soln.len() as i32) < minone {
                 ith = i;
-                minone = (soln.len() as i32);
+                minone = soln.len() as i32;
             }
         }
         //if let Some(thebest) = solns.get(ith) {
@@ -148,7 +148,7 @@ impl Puzzle {
         // Note to self: other A* is supposed to be optimal as long as h function is less than or
         // equal to cost... DO NOT USE for finding all best paths!
         // Manhattan distance
-        ((state.0 - self.end.0).abs() + (state.1 - self.end.1).abs())
+        (state.0 - self.end.0).abs() + (state.1 - self.end.1).abs()
     }
 
     pub fn cost(&self, state: (i32, i32)) -> i32 {
@@ -237,6 +237,18 @@ impl Puzzle {
         }
         None
     }
+
+    pub fn reset_with_n_corrupted_bytes(&mut self, n: usize) {
+        let mut board = vec![vec!['.'; self.columns]; self.rows];
+        for (i, (x, y)) in self.corrupted.iter().enumerate() {
+            if i == n {
+                break;
+            }
+            //corrupted_set.insert(*val);
+            board[*y as usize][*x as usize] = '#';
+        }
+        self.board = board;
+    }
 }
 
 fn parse_puzzle(str: &str, rows: usize, columns: usize, first_corrupted_bytes: Option<usize>) -> Puzzle {
@@ -253,25 +265,16 @@ fn parse_puzzle(str: &str, rows: usize, columns: usize, first_corrupted_bytes: O
         corrupted.push((*parts.get(0).unwrap(), *parts.get(1).unwrap()));
     }
 
-    //let columns = board.get(0).unwrap().len() ;
-    //let rows = board.len();
-    let mut corrupted_set: HashSet<(i32, i32)> = HashSet::new();
     let until = match first_corrupted_bytes {
         None => corrupted.len(),
         Some(c) => c
     };
-    for (i, val) in corrupted.iter().enumerate() {
+    for (i, (x, y)) in corrupted.iter().enumerate() {
         if i == until {
             break;
         }
-        corrupted_set.insert(*val);
-    }
-    for i in 0..rows {
-        for j in 0..columns {
-            if corrupted_set.contains(&(j as i32, i as i32)) {
-                board[i][j] = '#';
-            }
-        }
+        //corrupted_set.insert(*val);
+        board[*y as usize][*x as usize] = '#';
     }
 
     Puzzle {
@@ -290,16 +293,37 @@ fn solve_pt1(puzzle: &Puzzle) -> i32 {
 }
 
 fn solve_pt2(puzzle: &mut Puzzle) -> Option<(i32,i32)> {
-    // brute force
-    for i in puzzle.bytes_fallen..puzzle.corrupted.len() {
-        let next_corrupted = puzzle.corrupted.get(i).unwrap();
-        puzzle.board[next_corrupted.1 as usize][next_corrupted.0 as usize] = '#';
-        let c = puzzle.compute_score();
-        if c == 0 {
-            // found it
-            return Some(*next_corrupted);
+    // binary search is more efficient
+    let mut start = puzzle.bytes_fallen;
+    let mut end = puzzle.corrupted.len() - 1;
+    let mut idx: usize = 0;
+    let mut last_found = false;
+    while start < end {
+        idx = start + (end-start)/2;
+        puzzle.reset_with_n_corrupted_bytes(idx);
+        let score = puzzle.compute_score();
+        if score == 0 { // blocked
+            last_found = false;
+            end = idx;
+        } else {
+            last_found = true;
+            start = idx+1;
         }
     }
+    if idx < puzzle.corrupted.len() {
+        let idx_with_soln = if last_found { idx } else { idx-1 };
+        return Some(*puzzle.corrupted.get(idx_with_soln).unwrap());
+    }
+    // brute force below works
+    //for i in puzzle.bytes_fallen..puzzle.corrupted.len() {
+    //    let next_corrupted = puzzle.corrupted.get(i).unwrap();
+    //    puzzle.board[next_corrupted.1 as usize][next_corrupted.0 as usize] = '#';
+    //    let c = puzzle.compute_score();
+    //    if c == 0 {
+    //        // found it
+    //        return Some(*next_corrupted);
+    //    }
+    //}
     None
 }
 
@@ -308,9 +332,9 @@ pub fn day18() {
     let mut puzzle = parse_puzzle(&text, 71, 71, Some(1024));
     //println!("{:?}", puzzle);
     let soln = solve_pt1(&puzzle);
-    println!("Solution to day 16 part 1: {}", soln); // 308
+    println!("Solution to day 18 part 1: {}", soln); // 308
     let soln2 = solve_pt2(&mut puzzle);
-    println!("Solution to day 16 part 2: {:?}", soln2);
+    println!("Solution to day 18 part 2: {:?}", soln2); //46,28
 }
 
 #[cfg(test)]
