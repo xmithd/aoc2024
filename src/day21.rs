@@ -35,7 +35,7 @@ impl PartialOrd for State {
 
 
 fn manhattan_distance(start: &(i32, i32), end: &(i32, i32)) -> usize {
-    0*((start.0 - end.0).abs() + (start.1 - end.1).abs()) as usize 
+    ((start.0 - end.0).abs() + (start.1 - end.1).abs()) as usize 
 }
 
 fn euclidean_distance(start: &(i32, i32), end: &(i32, i32)) -> usize {
@@ -43,11 +43,10 @@ fn euclidean_distance(start: &(i32, i32), end: &(i32, i32)) -> usize {
     ((start.0 - end.0).pow(2) as f64 + (start.1 - end.1).pow(2) as f64).sqrt().floor() as usize
 }
 
-// returns one best path
-// might need all of the best paths?
+// might need all of the best paths so disable heuristics!
 pub fn a_star_best_paths(start: &(i32, i32), goal: &(i32, i32),
     cost_fn: &dyn Fn(&(i32, i32)) -> usize,
-    h: &dyn Fn(&(i32, i32)) -> usize,
+    _h: &dyn Fn(&(i32, i32)) -> usize,
     next_positions: &dyn Fn(&(i32, i32)) -> Vec<(i32, i32)>,
     start_dir: char) -> Vec<(usize,Vec<(i32, i32, char)>)> {
     let mut visited: HashSet<(i32, i32)> = HashSet::new();
@@ -55,7 +54,7 @@ pub fn a_star_best_paths(start: &(i32, i32), goal: &(i32, i32),
     let start_position = (start.0, start.1, start_dir);
     let mut best_cost: Option<usize> = None;
     let mut ret: Vec<(usize, Vec<(i32, i32, char)>)> = Vec::new();
-    frontier.push(State { cost: h(start), positions: vec![start_position] });
+    frontier.push(State { cost: 0, positions: vec![start_position] });
     while let Some(State { cost, positions }) = frontier.pop() {
         let current = positions.last().unwrap();
         let current_pos = (current.0, current.1);
@@ -72,15 +71,15 @@ pub fn a_star_best_paths(start: &(i32, i32), goal: &(i32, i32),
             ret.push((cost, positions.clone()));
         }
         let current_dir = current.2;
-        //visited.insert(current_pos);
+        visited.insert(current_pos);
         for child in next_positions(&current_pos) {
             if visited.contains(&child) {
                 continue;
             }
             let new_dir = get_direction_char(&current_pos, &child);
             // prefer path with straight lines (least change in directions)
-            let added_cost = if current_dir == START_CHAR || new_dir == current_dir { 0 } else { 4 };
-            let new_cost = cost + cost_fn(&child) - h(&current_pos) + h(&child) + added_cost*0; // ignore added cost for now?
+            let added_cost = if current_dir == START_CHAR || new_dir == current_dir { 0 } else { 3 };
+            let new_cost = cost + cost_fn(&child) + added_cost*0; // ignore added cost for now?
             let child_node = (child.0, child.1, new_dir);
             frontier.push(State { cost: new_cost, positions: [positions.clone(), [child_node].to_vec()].concat() });
         }
@@ -189,42 +188,6 @@ impl Puzzle {
         1
     }
 
-    // (cost, moves)
-    /*pub fn count_moves_numpad(&self, pattern: &str) -> (usize, String) {
-        let mut prev = 'A';
-        let mut sum_moves = 0;
-        let mut moves: Vec<char> = Vec::new();
-        let mut start_dir = '<';
-        pattern.chars().for_each( | current | {
-            let start = get_numpad_position(prev);
-            let end = get_numpad_position(current);
-            //print!("Go from {} to {}: ", prev, current);
-            prev = current;
-            let best_paths = a_star_best_paths(
-                &start, &end,
-                &|arg| self.cost_fn(arg),
-                &|state| manhattan_distance(state, &end),
-                &|arg| self.next_positions_numpad(arg),
-                start_dir
-            );
-            if let Some((cost, path)) = best_paths.last() {
-                if path.len() > 1 {
-                    start_dir = path.last().unwrap().2;
-                    let mut directions = deduce_directions(&path.into_iter().map(|(x, y, _)| (*x, *y)).collect::<Vec<_>>());
-                    directions.push('A');
-                    let actual_cost = manhattan_distance(&start, &end);
-                    //println!(" {:?}A and cost {}", directions, cost+1);
-                    sum_moves += actual_cost + 1;
-                    moves = [moves.clone(), directions].concat();
-                } else {
-                    moves = [moves.clone(), ['A'].to_vec()].concat();
-                    sum_moves += 1;
-                }
-            }
-        });
-        return (sum_moves, moves.into_iter().collect())
-    }*/
-
     // layer 0 -> numpad, the rest use keypad, returns command sequence as string (cost is simply the length)
     pub fn get_moves_per_path(&self, pattern: &str, layer: u32) -> Vec<String> {
         let mut prev = 'A';
@@ -287,53 +250,6 @@ impl Puzzle {
 
     }
 
-    /*
-    pub fn count_moves_keypad(&self, pattern: &str) -> (usize, String) {
-        let mut prev = 'A';
-        let mut sum_moves = 0;
-        let mut moves: Vec<char> = Vec::new();
-        let mut start_dir = ' ';
-        pattern.chars().for_each( | current | {
-            let start = get_keypad_position(prev);
-            let end = get_keypad_position(current);
-            //print!("Go from {} to {}: ", prev, current);
-            prev = current;
-            let best_paths  = a_star_best_paths(
-                &start, &end,
-                &|arg| self.cost_fn(arg),
-                &|state| manhattan_distance(state, &end),
-                &|arg| self.next_positions_keypad(arg),
-                start_dir
-            ); 
-            if let Some((_cost, path)) = best_paths.last() {
-                if path.len() > 1 { // have to move
-                    start_dir = path.last().unwrap().2;
-                    let mut directions = deduce_directions(&path.into_iter().map(|(x, y, _)| (*x, *y)).collect::<Vec<_>>());
-                    directions.push('A');
-                    let actual_cost = manhattan_distance(&start, &end);
-                    sum_moves += actual_cost + 1;
-                    moves = [moves.clone(), directions].concat();
-                } else { // don't have to move
-                    moves = [moves.clone(), ['A'].to_vec()].concat();
-                    sum_moves += 1;
-                }
-            } else {
-                panic!("Arrived at impossible state!");
-            }
-        });
-        return (sum_moves, moves.into_iter().collect())
-    }*/
-
-    /*pub fn compute_pt1_score(&self, pattern: &str) ->u64 {
-        let (first_cost, moves) = self.count_moves_numpad(pattern);
-        //println!("Numpad moves: {}", moves);
-        let (second_cost, order1moves) = self.count_moves_keypad(&moves);
-        //println!("First keypad moves: {}", order1moves);
-        let (third_cost, order2moves) = self.count_moves_keypad(&order1moves);
-        //println!("Second keypad moves: {}", order2moves);
-        let numerical_val = pattern.chars().filter(|digit| digit.is_digit(10)).collect::<String>().parse::<usize>().unwrap();
-        return  (third_cost*numerical_val) as u64;
-    }*/
     pub fn compute_pt1_score(&self, pattern: &str) -> usize {
         let mut best_score = usize::MAX;
         let mut best_path: String = "".to_string();
@@ -352,10 +268,12 @@ impl Puzzle {
         best_score*numerical_val
     }
 
-    pub fn compute_score(&self) -> usize {
+    pub fn compute_pt2_score(&self, pattern: &str, layer_num: usize, target_layer: usize) -> u64 {
+        // use recursion + cache for part 2!
         // TODO
         0
     }
+
 }
 
 fn solve_pt1(pb: &Puzzle) -> usize {
@@ -364,11 +282,19 @@ fn solve_pt1(pb: &Puzzle) -> usize {
     ).sum::<usize>()
 }
 
+fn solve_pt2(pb: &Puzzle) -> u64 {
+    pb.codes.iter().map(
+        |pattern| pb.compute_pt2_score(pattern, 0, 25)
+    ).sum::<u64>()
+}
+
 pub fn day21() {
     let text = fs::read_to_string("inputs/day21.txt").unwrap();
     let puzzle = parse_puzzle(&text);
     let soln = solve_pt1(&puzzle);
-    println!("Solution to day 21 part 1: {}", soln);
+    println!("Solution to day 21 part 1: {}", soln); // 94426
+    let soln2 = solve_pt2(&puzzle);
+    println!("Solution to day 21 part 2: {}", soln2);
 }
 
 #[cfg(test)]
