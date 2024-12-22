@@ -228,7 +228,6 @@ impl Puzzle {
         let pt = best_path.get(idx).unwrap();
         for i in idx+1..best_path.len() {
             let destination = best_path.get(i).unwrap();
-            //if manhattan_distance(pt, destination) <= radius && (i-idx) > min_improvement {
             let shortcut_cost = manhattan_distance(pt, destination);
             if shortcut_cost <= radius {
                 let real_cost = i-idx;
@@ -340,7 +339,7 @@ pub fn day20() {
     let soln = solve_pt1(&puzzle, 100);
     println!("Solution to day 20 part 1: {}", soln); // 1372
     let soln2 = solve_pt2(&puzzle, 100);
-    println!("Solution to day 20 part 2: {:?}", soln2); //
+    println!("Solution to day 20 part 2: {:?}", soln2); // 979014
 }
 
 #[cfg(test)]
@@ -382,7 +381,6 @@ mod tests {
     #[test]
     fn test_first_sample() {
         let pb = parse_puzzle(&FIRST_SAMPLE);
-        println!("{:?}", pb);
         assert_eq!(pb.compute_score(), 84);
         assert_eq!(solve_pt1(&pb, 2), 44);
         assert_eq!(solve_pt1(&pb, 64), 1);
