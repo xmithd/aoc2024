@@ -7,12 +7,33 @@ struct Puzzle {
     graph: HashMap<String, Vec<String>>
 }
 
+#[derive(Debug, Hash, Eq, PartialEq, Clone)]
+struct Triplets {
+   tuple : [String; 3]
+}
+
+impl Triplets {
+    pub fn new(input: &[&String; 3]) -> Self {
+        let mut items = Vec::from(input);
+        items.sort();
+        Self {
+            tuple: [items.get(0).unwrap().to_string(),
+                    items.get(1).unwrap().to_string(),
+                    items.get(2).unwrap().to_string()],
+        }
+    }
+}
+
+
+
 fn parse_puzzle(text: &str) -> Puzzle {
     let mut graph: HashMap<String, Vec<String>> = HashMap::new();
     for line in text.trim().split("\n") {
         let tokens: Vec<String> = line.split("-").map(|a| a.to_string()).collect::<Vec<_>>();
         let (a, b) = (tokens.get(0).unwrap(), tokens.get(1).unwrap());
         graph.entry(a.to_string()).or_insert(vec![]).push(b.to_string());
+        // do also in the other direction
+        graph.entry(b.to_string()).or_insert(vec![]).push(a.to_string());
     }
     Puzzle {
         graph
@@ -37,54 +58,51 @@ fn dfs_graph(graph: &HashMap<String, Vec<String>>, current: &String, visited: &m
     }
 }
 
-fn dfs_graph_interconnected(graph: &HashMap<String, Vec<String>>, current: &String, parent: Option<&String>, visited: &mut HashSet<String>, path: &Vec<String>) {
-    if path.len() > 0 && path.first().unwrap() == current {
-        // found loop!
-        return;
-    }
-    if visited.contains(current) {
-        return;
-    }
-    /*if path.len() == max_connected {
-        return;
-    }*/
+
+fn dfs_graph_triangles(graph: &HashMap<String, Vec<String>>, current: &String, visited: &mut HashSet<String>, triangles: &mut HashSet<Triplets>) {
+    //if visited.contains(current) {
+    //    return;
+    //}
     if let Some(connected) = graph.get(current) {
         visited.insert(current.clone());
+        for i in 0..connected.len() {
+            for j in i+1..connected.len() {
+                let neighbour = connected.get(j).unwrap();
+                let other_neighbour = connected.get(i).unwrap();
+                if graph.get(other_neighbour).unwrap().contains(neighbour) {
+                    triangles.insert(Triplets::new(&[current, neighbour, other_neighbour]));
+                }
+            }
+        }
         for item in connected {
-            let mut new_path = path.clone();
-            new_path.push(current.clone());
-            dfs_graph_interconnected(graph, item, Some(current), visited, &new_path);
+            if !visited.contains(item) {
+                dfs_graph_triangles(graph, item, visited, triangles);
+            }
         }
     }
 }
 
-fn get_connected_components(graph: &HashMap<String, Vec<String>>, max_connected: usize) -> Vec<HashSet<String>> {
-    let mut ret = vec![];
-    let mut global_visited: HashSet<String> = HashSet::new();
+fn get_connected_components(graph: &HashMap<String, Vec<String>>) -> HashSet<Triplets> {
+    let mut triangles = HashSet::new();
+    let mut visited: HashSet<String> = HashSet::new();
     for (k, _v) in graph {
-        if global_visited.contains(k) {
+        if visited.contains(k) {
             continue;
         }
-        global_visited.insert(k.clone());
-        let mut visited = HashSet::new();
-        let mut path = Vec::new();
         //dfs_graph(graph, k, &mut visited, 0, max_connected, max_connected);
-        dfs_graph_interconnected(graph, k, None, &mut visited, &path);
-        for node in &visited {
-            global_visited.insert(node.clone());
-        }
-        ret.push(visited.clone());
+        dfs_graph_triangles(graph, k, &mut visited, &mut triangles);
     }
-    ret
+    //println!("Connected components: {:?}", triangles);
+    triangles
 }
 
 fn solve_pt1(pb: &Puzzle) -> usize {
-    let connected_ones = get_connected_components(&pb.graph, 3);
-    println!("Connected: {:?}", connected_ones);
+    let connected_ones = get_connected_components(&pb.graph);
+    //println!("Connected: {:?}", connected_ones);
     connected_ones.into_iter()
-        .filter(|set| set.len() == 3)
-        .filter(|set| {
-            for node in set {
+        //.filter(|set| set.len() == 3)
+        .filter(|triplet| {
+            for node in &triplet.tuple {
                 if node.starts_with("t") {
                     return true;
                 }
