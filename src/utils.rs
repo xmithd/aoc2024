@@ -6,60 +6,6 @@ pub fn read_file_as_text(path: &str) -> String {
     return text;
 }
 
-pub fn parse_two_lists(txt: &str) -> (Vec<i32>, Vec<i32>) {
-    let cols: Vec<&str> = txt.split_whitespace().collect();
-    if cols.len() % 2 != 0 {
-        panic!("Text must contain exactly one whitespace-separated column");
-    }
-    let mut col1: Vec<i32> = Vec::new();
-    let mut col2: Vec<i32> = Vec::new();
-    for i in 0..cols.len() {
-        let val = cols[i].parse::<i32>().expect("Bad input");
-        if i % 2 == 0 {
-            col1.push(val);
-        } else {
-            col2.push(val);
-        }
-    }
-    return (col1,col2)
-}
-
-pub fn sum_distance_bw_list(l1: &Vec<i32>, l2: &Vec<i32>) -> i32 {
-    let mut l1sorted =  l1.clone();
-    l1sorted.sort();
-    let mut l2sorted = l2.clone();
-    l2sorted.sort();
-    l1sorted.into_iter()
-    .zip(l2sorted.into_iter())
-    .map(| (a,b) | distance(a,b))
-    .sum::<i32>()
-}
-
-pub fn distance(a: i32, b: i32) -> i32 {
-    return (a-b).abs();
-}
-
-fn vec_to_hashmap(vec: &Vec<i32>) -> HashMap<i32, i32> {
-    let mut map = HashMap::new();
-    for &num in vec.iter() {
-        *map.entry(num).or_insert(0) += 1;
-    }
-    map
-}
-/// for each value in list 1
-pub fn compute_similarity(l1: &Vec<i32>, l2: &Vec<i32>) -> i32 {
-    let l2map = vec_to_hashmap(l2);
-    return l1.into_iter()
-    .map( | it | {
-        let counted = match l2map.get(it) {
-            Some(val) => val.clone(),
-            None => 0,
-        };
-        it*counted
-    })
-    .sum::<i32>();
-}
-
 pub fn parse_line_by_line(txt: &str) -> Vec<Vec<i32>> {
     txt.split('\n')
     .filter(| line | { line.len() > 0})
